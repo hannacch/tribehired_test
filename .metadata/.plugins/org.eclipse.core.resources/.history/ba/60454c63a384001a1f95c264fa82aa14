@@ -1,0 +1,39 @@
+package com.tribehired.test.Controller;
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.tribehired.test.Model.PostComment;
+import com.tribehired.test.Service.PostService;
+
+@RestController
+public class PostController {
+	
+	Logger logger = LoggerFactory.getLogger(this.getClass());
+	
+	@Autowired
+	private PostService postService;
+	
+	@GetMapping("/test/top-post")
+	public List<PostComment> top() {
+		logger.debug("Calling GET top-post");
+		return postService.list();
+	}
+	
+	@GetMapping("/test/search")
+	public List<PostComment> search(@RequestParam(required = false) Long postId,
+			@RequestParam(required = false) Long id,
+			@RequestParam(required = false) String name,
+			@RequestParam(required = false) String email,
+			@RequestParam(required = false) String body) {
+		logger.debug("Calling GET top-post");
+		return postService.list();
+	}
+	
+}

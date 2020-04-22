@@ -1,0 +1,15 @@
+package com.tribehired.test.Service;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.tribehired.test.Model.PostComment;
+
+public interface PostService {
+	
+	List<PostComment> list();
+	
+	List<PostComment> search(Long postId, Long id, String name, String email, String body);
+
+}

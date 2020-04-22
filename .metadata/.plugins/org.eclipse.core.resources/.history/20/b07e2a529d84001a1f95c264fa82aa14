@@ -1,0 +1,68 @@
+package com.tribehired.test.Service;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import com.tribehired.test.Model.Comment;
+import com.tribehired.test.Model.Post;
+import com.tribehired.test.Model.PostComment;
+
+public class PostServiceImpl implements PostService {
+
+	@Autowired
+	private RestTemplate restTemplate;
+
+	@Override
+	public List<PostComment> list() {
+		Map<Long, Long> commentMap = comments();
+		if (commentMap != null) {
+			List<PostComment> posts = new ArrayList();
+			for (Map.Entry<Long, Long> entry : commentMap.entrySet()) {
+				PostComment post = new PostComment();
+				post.setPost_id(entry.getKey());
+				post.setTotal_number_of_comments(entry.getValue().intValue());
+			}
+			return posts;
+		}
+
+		return null;
+	}
+
+	// Map of PostId, CommentCount
+	private Map<Long, Long> comments() {
+		ResponseEntity<List<Comment>> commentResponse = restTemplate.exchange(
+				"https://jsonplaceholder.typicode.com/comments", HttpMethod.GET, null,
+				new ParameterizedTypeReference<List<Comment>>() {
+				});
+		List<Comment> comments = commentResponse.getBody();
+		Map<Long, Long> commentCountMap = comments.stream()
+				.collect(Collectors.groupingBy(Comment::getPostId, Collectors.counting()));
+		return sortByTotalComments(commentCountMap);
+	}
+
+	private Map<Long, Long> sortByTotalComments(Map<Long, Long> commentCount) {
+		return commentCount.entrySet().stream().sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+	}
+
+	private PostComment initPost(Long postId) {
+		PostComment postComment = new PostComment();
+		Post post = restTemplate
+				  .getForObject("https://jsonplaceholder.typicode.com/posts/"+postId, Post.class);
+		if(post != null) {
+			postComment.setPost_title(post.getTitle());
+			postComment.setPost_body(post.getBody());
+		}
+		return postComment;
+	}
+
+}

@@ -1,0 +1,11 @@
+package com.tribehired.test.Service;
+
+import java.util.List;
+
+import com.tribehired.test.Model.PostInfo;
+
+public interface PostService {
+	
+	List<PostInfo> list();
+
+}

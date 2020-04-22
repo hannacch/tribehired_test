@@ -1,0 +1,5 @@
+package com.tribehired.test.Service;
+
+public class PostServiceImpl {
+
+}

@@ -1,0 +1,26 @@
+package com.tribehired.test.Controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.tribehired.test.Model.PostComment;
+import com.tribehired.test.Service.PostService;
+
+//@RestController
+@Controller
+public class PostController {
+	
+	@Autowired
+	private PostService postService;
+	
+	@GetMapping("top-post")
+	public List<PostComment> top() {
+		return postService.list();
+	}
+	
+}

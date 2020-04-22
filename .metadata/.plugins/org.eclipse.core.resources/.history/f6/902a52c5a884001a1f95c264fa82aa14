@@ -1,0 +1,113 @@
+package com.tribehired.test.Service;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.tribehired.test.Model.Comment;
+import com.tribehired.test.Model.Post;
+import com.tribehired.test.Model.PostComment;
+
+@Service
+public class PostServiceImpl implements PostService {
+
+	Logger logger = LoggerFactory.getLogger(this.getClass());
+	
+	@Autowired
+	private RestTemplate restTemplate;
+
+	@Override
+	public List<PostComment> list() {
+		logger.debug("get list");
+		Map<Long, Long> commentMap = comments();
+		if (commentMap != null) {
+			List<PostComment> posts = new ArrayList();
+			for (Map.Entry<Long, Long> entry : commentMap.entrySet()) {
+				PostComment post = initPost(entry.getKey());
+				post.setTotal_number_of_comments(entry.getValue().intValue());
+				posts.add(post);
+			}
+			return posts;
+		}
+
+		return null;
+	}
+	
+	@Override
+	public List<PostComment> search(Long postId, Long id, String name, String email, String body) {
+		logger.debug("search list");
+		List<Comment> comments = getComments();
+		List<Predicate<Comment>> predicates = new ArrayList<>();
+		
+		if(postId != null) {
+			predicates.add(c -> c.getPostId().equals(postId));
+		}
+		if(id != null) {
+			predicates.add(c -> c.getId().equals(id));
+		}
+		if(name != null && !name.isBlank()) {
+			predicates.add(c -> c.getName().contains(name));
+		}
+		if(email != null && !email.isBlank()) {
+			predicates.add(c -> c.getEmail().contains(email));
+		}
+		if(body != null && !body.isBlank()) {
+			predicates.add(c -> c.getBody().contains(body));
+		}
+		if(!predicates.isEmpty()) {
+			return comments
+					.stream()
+					.filter(predicates.stream().reduce(x -> true, Predicate::and))
+					.collect(Collectors.toList());
+		}
+		
+		return null;
+	}
+
+	private List<Comment> getComments() {
+		ResponseEntity<List<Comment>> commentResponse = restTemplate.exchange(
+				"https://jsonplaceholder.typicode.com/comments", HttpMethod.GET, null,
+				new ParameterizedTypeReference<List<Comment>>() {
+				});
+		return commentResponse.getBody();
+	}
+	// Map of PostId, CommentCount
+	private Map<Long, Long> comments() {
+		List<Comment> comments = getComments();
+		logger.debug("total comments = " + comments.size());
+		Map<Long, Long> commentCountMap = comments.stream()
+				.collect(Collectors.groupingBy(Comment::getPostId, Collectors.counting()));
+		return sortByTotalComments(commentCountMap);
+	}
+
+	private Map<Long, Long> sortByTotalComments(Map<Long, Long> commentCount) {
+		return commentCount.entrySet().stream().sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+	}
+
+	private PostComment initPost(Long postId) {
+		PostComment postComment = new PostComment();
+		Post post = restTemplate
+				  .getForObject("https://jsonplaceholder.typicode.com/posts/"+postId, Post.class);
+		if(post != null) {
+			postComment.setPost_id(post.getId());
+			postComment.setPost_title(post.getTitle());
+			postComment.setPost_body(post.getBody());
+		}
+		return postComment;
+	}
+
+}

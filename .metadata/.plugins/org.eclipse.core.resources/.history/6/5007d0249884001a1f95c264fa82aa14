@@ -1,0 +1,15 @@
+package com.tribehired.test.Service;
+
+import java.util.List;
+
+import com.tribehired.test.Model.PostInfo;
+
+public class PostServiceImpl implements PostService {
+
+	@Override
+	public List<PostInfo> list() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}
